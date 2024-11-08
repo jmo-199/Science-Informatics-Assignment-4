@@ -1,0 +1,128 @@
+---
+title: "Assignment 4"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+date: "2024-11-08"
+---
+
+
+
+```{r}
+library(seqinr)
+library(R.utils)
+```
+
+
+```{r, q1}
+file_path <- file_path <- "C:\\Users\\moore\\OneDrive\\Desktop\\Fall 2024\\Programming for science informatics\\chr1_GL383518v1_alt.fa.gz"
+
+gunzip(file_path, remove = FALSE)
+
+decompressed_file_path <- gsub(".gz$", "", file_path)
+```
+
+```{r, task 1}
+fasta_data <- read.fasta(decompressed_file_path)
+# Access the 10th letter of the first sequence
+tenth_letter <- fasta_data[[1]][10]
+print(tenth_letter)
+# Access the 758th letter of the first sequence
+letter_758 <- fasta_data[[1]][758]
+print(letter_758)
+```
+
+```{r, task 2}
+sequence <- fasta_data[[1]]
+reverse_complement <- rev(comp(sequence))
+
+# Print the 79th letter of the reverse complement
+print(paste("79th letter:", reverse_complement[79]))
+
+# Print the 500th through the 800th letters of the reverse complement
+subsequence_500_800 <- reverse_complement[500:800]
+print("500th to 800th letters:")
+print(subsequence_500_800)
+```
+```{r, task 3}
+# Define kilobase size
+kilobase_size <- 1000
+sequence_length <- length(sequence)
+
+# Initialize list to store counts per kilobase
+nucleotide_counts_by_kb <- list()
+
+# Loop through the sequence in 1000-base chunks
+for (i in seq(1, sequence_length, by = kilobase_size)) {
+  # Define the current kilobase range
+  end_pos <- min(i + kilobase_size - 1, sequence_length)
+  kilobase_chunk <- sequence[i:end_pos]
+  
+  # Count nucleotides in this chunk
+  nucleotide_counts <- table(kilobase_chunk)
+  
+  # Ensure counts for each nucleotide, even if zero
+  full_counts <- c(A = 0, T = 0, C = 0, G = 0)
+  full_counts[names(nucleotide_counts)] <- nucleotide_counts
+  
+  # Store counts in list with kilobase number
+  kb_number <- ceiling(i / kilobase_size)
+  nucleotide_counts_by_kb[[paste0("Kilobase_", kb_number)]] <- full_counts
+}
+
+# Display the results
+print(nucleotide_counts_by_kb)
+```
+
+```{r, task 4 part a}
+# Convert the first kilobase counts to a data frame
+first_kilobase_counts <- as.data.frame(t(nucleotide_counts_by_kb[[1]]))
+colnames(first_kilobase_counts) <- c("A", "C", "G", "T")
+
+# Display the data frame for the first 1000 base pairs
+print(first_kilobase_counts)
+```
+```{r, task 4 part b}
+# Combine all kilobase counts into a single data frame
+all_kilobase_counts <- do.call(rbind, lapply(nucleotide_counts_by_kb, function(x) as.data.frame(t(x))))
+colnames(all_kilobase_counts) <- c("A", "C", "G", "T")
+
+# Display the first few rows of the data frame
+print(head(all_kilobase_counts))
+```
+```{r, task 4 part c}
+# This was done in 4b to ensure each row in the data frame corresponds to a kilobase
+print(all_kilobase_counts)
+```
+```{r, task 4 part d}
+# Calculate the sum for each kilobase row
+all_kilobase_counts$Sum <- rowSums(all_kilobase_counts)
+
+# Display the data frame with the sum column
+print(head(all_kilobase_counts))
+```
+
+1. The expected sum for each list is 1000.
+```{r}
+expected_sum <- 1000
+# Identify rows where the sum does not match the expected 1000 bases
+anomalies <- all_kilobase_counts$Sum != expected_sum
+
+# Display rows with discrepancies, if any
+if (any(anomalies)) {
+  print("Rows with sums not equal to the expected value of 1000:")
+  print(all_kilobase_counts[anomalies, ])
+} else {
+  print("All rows have the expected sum of 1000.")
+}
+
+```
+2. Yes the sum of 439 in Kilobase_183 confirms that the last part of the sequence is shorter than 1000 base pairs. 
+
+3. Explanation for discrepancies: The primary reason for any discrepancy in the sum is likely due to the last kilobase in the sequence, which may not contain a full 1000 bases if the total sequence length is not a perfect multiple of 1000. This would result in a sum less than 1000 (439) for the last kilobase.
+
+
+
+
+
